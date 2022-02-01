@@ -1,83 +1,49 @@
 # BACKUP ONLY!!! MUST ADJUST READ_CSV & TO_CSV LOCATIONS FOR IT TO WORK HERE
-
-# MUST UPLOAD 3 FILES FOR 3 READ_CSV()
+# REQUIRES 3 FILES FOR READ_CSV():    escy19.csv, cpop.csv, cy19_uic.csv
 
 import pandas as pd
 
 lowdt = '20190101'
-
 lowdt = pd.to_datetime(lowdt)
 
 escy19 = pd.read_csv('escy19.csv', parse_dates=['stdt'])
-
 # print(escy19.shape)
 
-escy19['stdt'] = escy19['stdt'].astype(str).str[4:8] + 
-
-escy19['stdt'].astype(str).str[0:4]
-
+escy19['stdt'] = escy19['stdt'].astype(str).str[4:8] + escy19['stdt'].astype(str).str[0:4]
 escy19['stdt'] = pd.to_datetime(escy19['stdt'], errors='coerce')
-
 # print(escy19['agt'].value_counts().to_string())
-
 # a0_flt = escy19[escy19['svc'] == 'A0']
-
 # a0 = escy19[a0_flt]
-
 # print(a0_flt.shape)
 
 stfsrv_flt = ((escy19['stdt'] > lowdt) &
-
               (escy19['msk'] != '') &
-
               (escy19['agt'] != 'CONNECT COLO') &
-
               (escy19['agt'] != 'WEB_APP') &
-
               (escy19['agt'] != 'ADAMS_WEB') &
-
               (escy19['agt'] != 'ADAMS_ESTOP') &
-
               (escy19['agt'] != 'ARAP ESTOP') &
-
               (escy19['agt'] != 'ARAP_RC') &
-
               (escy19['agt'] != 'BR ESTOP') &
-
               (escy19['agt'] != 'ME ESTOP') &
-
               (escy19['agt'] != 'NWS ESTOP') &
-
               (escy19['agt'] != 'PB ESTOP') &
-
               (escy19['agt'] != 'SPRINGS_5228') &
-
               (escy19['agt'] != 'SPRINGS_MAIN') &
-
-              (escy19['agt'] != 'TRICO_MAIN') &
-
+              (escy19['agt'] != 'TRICO_MAIN') & 
               (escy19['agt'] != 'TRICO_WEBREG') &
-
               (escy19['agt'] != 'UAC ESTOP') &
-
               (escy19['agt'] != 'WED ESTOP') &
-
               (escy19['agt'] != 'WELD_GROUP') &
-
               (escy19['agt'] != 'WELD_GROUP4') &
-
-              (escy19['agt'] != ' ') &       # jl empty values = single space!
-
+              (escy19['agt'] != ' ') &              # jl empty values = single space!
               (escy19['rgn'] != ' ') &
-
               (escy19['svc'] != 'A0'))
 
 # print(escy19['agt'][stfsrv_flt].value_counts().to_string())
-
 # print(escy19[stfsrv_flt].to_string())
 
 stfonly = escy19[stfsrv_flt]
-
 stfonly_gby = stfonly.groupby('msk', as_index=False)['stdt'].max()    # as_index=False retains column labels
 
 # CREATE A0 GROUP
@@ -85,11 +51,8 @@ stfonly_gby = stfonly.groupby('msk', as_index=False)['stdt'].max()    # as_index
 cpop = pd.read_csv('cpop.csv', parse_dates=['stdt','endt'])
 
 cpop['act1'] = cpop['duocol1'].astype(str).str[34:38] + cpop['duocol1'].astype(str).str[30:34]
-
 cpop['act2'] = cpop['duocol1'].astype(str).str[42:46] + cpop['duocol1'].astype(str).str[38:42]
-
 cpop['act3'] = cpop['duocol2'].astype(str).str[0:4] + cpop['duocol1'].astype(str).str[46:50]
-
 cpop['act4'] = cpop['duocol2'].astype(str).str[8:12] + cpop['duocol2'].astype(str).str[4:8]
 
 a0 = cpop.loc[:, ['msk', 'rgn', 'svc', 'stdt', 'act1', 'act2', 'act3', 'act4']]
@@ -97,7 +60,6 @@ a0 = cpop.loc[:, ['msk', 'rgn', 'svc', 'stdt', 'act1', 'act2', 'act3', 'act4']]
 a0['stdt'] = a0['stdt'].astype(str).str[4:8] + a0['stdt'].astype(str).str[0:4]
 
 temp1 = ((a0['act1'] > '0') & (a0['act2'] > '0') & (a0['act3'] > '0') & (a0['act4'] > '0'))
-
 a0['compl'] = temp1.map({True: 1, False: 0})
 
 # CREATE UI PROFILED GROUP
@@ -105,20 +67,15 @@ a0['compl'] = temp1.map({True: 1, False: 0})
 uic = pd.read_csv('cy19_uic.csv')
 
 a0_uic = pd.merge(uic, a0, left_on='MaskID', right_on='msk', how='left')
-
 # print(a0_uic.to_string())
 
 resea_out = pd.merge(a0_uic, stfonly_gby, left_on='MaskID', right_on='msk', how='left')
-
 resea_out.rename(columns={'stdt_x': 'a0dt', 'stdt_y': 'last_stf_svc'}, inplace=True)
-
 resea_out['a0dt'] = pd.to_datetime(resea_out['a0dt'], errors='coerce')
 
 temp2 = (resea_out['last_stf_svc'] > resea_out['a0dt'])
-
 resea_out['came_back'] = temp2.map({True: 1, False: 0})
 
 print(resea_out.shape)
 
 resea_out.to_csv('resea_out.csv')
-
