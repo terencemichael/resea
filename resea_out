@@ -1,5 +1,4 @@
-# BACKUP ONLY!!! MUST ADJUST READ_CSV & TO_CSV LOCATIONS FOR IT TO WORK HERE
-# REQUIRES 3 FILES FOR READ_CSV():    escy19.csv, cpop.csv, cy19_uic.csv
+""" ADJUST READ_CSV() TO_CSV() PATHS TO WORK HERE. REQUIRES 3 FILES FOR READ_CSV():  escy19.csv, cpop.csv, cy19_uic.csv """
 
 import pandas as pd
 
@@ -11,10 +10,6 @@ escy19 = pd.read_csv('escy19.csv', parse_dates=['stdt'])
 
 escy19['stdt'] = escy19['stdt'].astype(str).str[4:8] + escy19['stdt'].astype(str).str[0:4]
 escy19['stdt'] = pd.to_datetime(escy19['stdt'], errors='coerce')
-# print(escy19['agt'].value_counts().to_string())
-# a0_flt = escy19[escy19['svc'] == 'A0']
-# a0 = escy19[a0_flt]
-# print(a0_flt.shape)
 
 stfsrv_flt = ((escy19['stdt'] > lowdt) &
               (escy19['msk'] != '') &
@@ -40,8 +35,7 @@ stfsrv_flt = ((escy19['stdt'] > lowdt) &
               (escy19['rgn'] != ' ') &
               (escy19['svc'] != 'A0'))
 
-# print(escy19['agt'][stfsrv_flt].value_counts().to_string())
-# print(escy19[stfsrv_flt].to_string())
+# print(escy19['agt'][stfsrv_flt].value_counts().to_string())     # check for automation agents
 
 stfonly = escy19[stfsrv_flt]
 stfonly_gby = stfonly.groupby('msk', as_index=False)['stdt'].max()    # as_index=False retains column labels
@@ -67,7 +61,6 @@ a0['compl'] = temp1.map({True: 1, False: 0})
 uic = pd.read_csv('cy19_uic.csv')
 
 a0_uic = pd.merge(uic, a0, left_on='MaskID', right_on='msk', how='left')
-# print(a0_uic.to_string())
 
 resea_out = pd.merge(a0_uic, stfonly_gby, left_on='MaskID', right_on='msk', how='left')
 resea_out.rename(columns={'stdt_x': 'a0dt', 'stdt_y': 'last_stf_svc'}, inplace=True)
